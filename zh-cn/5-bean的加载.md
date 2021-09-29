@@ -1679,6 +1679,7 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper
             for (BeanPostProcessor bp : getBeanPostProcessors()) {
                 if (bp instanceof InstantiationAwareBeanPostProcessor) {
                     InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+                    // 对所有需要依赖检查的属性进行后处理
                     pvs = ibp.postProcessPropertyValues(pvs, filteredPds, bw.getWrappedInstance(), beanName);
                     if (pvs == null) {
                         return;
@@ -1687,13 +1688,22 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, BeanWrapper
             }
         }
         if (needsDepCheck) {
+            // 依赖检查，对应depends-on属性，3.0已弃用
             checkDependencies(beanName, mbd, filteredPds, pvs);
         }
     }
-
+    // 将属性应用到bean中
     applyPropertyValues(beanName, mbd, bw, pvs);
 }
 ```
+在populateBean函数中提供如下处理流程
+
+- InstantiationAwareBeanPostProcessor处理器的postProcessAfterInstantiation函数应用，此函数可以控制程序是否继续进行属性填充
+
+- 根据注入类型，提取依赖的bean，并统一存入PropertyValues中
+
+- 应用InstantiationAwareBeanPostProcessor处理器的postProcessPropertyValues方法，对属性获取完毕填充前对属性的再次处理，典型应用是
+RequiredAnnotationBeanPostProcessor类中对属性的验证
 
 
 
